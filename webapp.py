@@ -82,7 +82,7 @@ def list_outputs(job_dir):
         if os.path.isfile(path):
             if name.lower().endswith(".mp4"):
                items.append({"name": name, "size": os.path.getsize(path), "type": "video"})
-            elif name.lower().endswith(".srt"):
+            elif name.lower().endswith(".srt") or name.lower().endswith(".ass"):
                items.append({"name": name, "size": os.path.getsize(path), "type": "subtitle"})
     
     items.sort(key=lambda x: x["name"])
@@ -117,6 +117,7 @@ def run_job(job_id, payload):
         core.SUBTITLE_FONT = subtitle_font
         core.SUBTITLE_FONTS_DIR = subtitle_fontsdir
         core.SUBTITLE_LOCATION = subtitle_location
+        core.SUBTITLE_STYLE = payload.get("subtitle_style") or "normal"
         core.PADDING = max(0, padding if padding is not None else 10)
         core.set_ratio_preset(ratio)
 

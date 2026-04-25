@@ -23,22 +23,23 @@ WHISPER_MODEL = "small"    # Whisper model size: tiny, base, small, medium, larg
 SUBTITLE_FONT = "Arial"
 SUBTITLE_FONTS_DIR = None
 SUBTITLE_LOCATION = "bottom"
+SUBTITLE_STYLE = "normal"
 OUTPUT_RATIO = "9:16"
-OUT_WIDTH = 1080
-OUT_HEIGHT = 1920
+OUT_WIDTH = 720
+OUT_HEIGHT = 1280
 
 
 def set_ratio_preset(preset):
     global OUTPUT_RATIO, OUT_WIDTH, OUT_HEIGHT
     OUTPUT_RATIO = preset
     if preset == "9:16":
-        OUT_WIDTH, OUT_HEIGHT = 1080, 1920
+        OUT_WIDTH, OUT_HEIGHT = 720, 1280
         return
     if preset == "1:1":
-        OUT_WIDTH, OUT_HEIGHT = 1080, 1080
+        OUT_WIDTH, OUT_HEIGHT = 720, 720
         return
     if preset == "16:9":
-        OUT_WIDTH, OUT_HEIGHT = 1920, 1080
+        OUT_WIDTH, OUT_HEIGHT = 1280, 720
         return
     if preset == "original":
         OUT_WIDTH, OUT_HEIGHT = None, None
@@ -409,7 +410,7 @@ def generate_subtitle(video_file, subtitle_file, event_hook=None):
                 event_hook("stage", {"stage": "subtitle_transcribe"})
             except Exception:
                 pass
-        segments, info = model.transcribe(video_file, language="id")
+        segments, info = model.transcribe(video_file, language="id", word_timestamps=True)
         return segments
 
     try:
@@ -435,17 +436,87 @@ def generate_subtitle(video_file, subtitle_file, event_hook=None):
         except Exception:
             pass
     print("  Generating subtitle file...")
-    with open(subtitle_file, "w", encoding="utf-8") as f:
-        for i, segment in enumerate(segments, start=1):
-            start_time = format_timestamp(segment.start)
-            end_time = format_timestamp(segment.end)
-            text = segment.text.strip()
+    
+    # Check style
+    is_karaoke = SUBTITLE_STYLE == "karaoke"
+    if is_karaoke:
+        # override subtitle_file extension if needed, though ffmpeg infers from content or ext. 
+        # Actually we should just write it to the same file (temp_X.srt) but with ASS content.
+        # Ffmpeg's subtitles filter can auto-detect ASS.
+        pass
 
-            f.write(f"{i}\n")
-            f.write(f"{start_time} --> {end_time}\n")
-            f.write(f"{text}\n\n")
+    with open(subtitle_file, "w", encoding="utf-8") as f:
+        if is_karaoke:
+            f.write("[Script Info]\nScriptType: v4.00+\nPlayResX: 1080\nPlayResY: 1920\n\n")
+            f.write("[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n")
+            # Yellow primary, white secondary for karaoke
+            f.write(f"Style: Default,{SUBTITLE_FONT},12,&H0000FFFF,&H00FFFFFF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,2,1,2,10,10,40,1\n\n")
+            f.write("[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n")
+        
+        counter = 1
+        for segment in segments:
+            words = segment.words
+            if words:
+                chunk = []
+                for word in words:
+                    chunk.append(word)
+                    # Limit to 4 words per line or end of sentence
+                    if len(chunk) >= 4 or word.word.strip().endswith(('.', '?', '!')):
+                        if is_karaoke:
+                            start_time = format_ass_timestamp(chunk[0].start)
+                            end_time = format_ass_timestamp(chunk[-1].end)
+                            text = ""
+                            for w in chunk:
+                                dur_cs = int((w.end - w.start) * 100)
+                                text += f"{{\\k{dur_cs}}}" + w.word
+                            f.write(f"Dialogue: 0,{start_time},{end_time},Default,,0,0,0,,{text.strip()}\n")
+                        else:
+                            start_time = format_timestamp(chunk[0].start)
+                            end_time = format_timestamp(chunk[-1].end)
+                            text = "".join([w.word for w in chunk]).strip()
+                            f.write(f"{counter}\n{start_time} --> {end_time}\n{text}\n\n")
+                        counter += 1
+                        chunk = []
+                if chunk:
+                    if is_karaoke:
+                        start_time = format_ass_timestamp(chunk[0].start)
+                        end_time = format_ass_timestamp(chunk[-1].end)
+                        text = ""
+                        for w in chunk:
+                            dur_cs = int((w.end - w.start) * 100)
+                            text += f"{{\\k{dur_cs}}}" + w.word
+                        f.write(f"Dialogue: 0,{start_time},{end_time},Default,,0,0,0,,{text.strip()}\n")
+                    else:
+                        start_time = format_timestamp(chunk[0].start)
+                        end_time = format_timestamp(chunk[-1].end)
+                        text = "".join([w.word for w in chunk]).strip()
+                        f.write(f"{counter}\n{start_time} --> {end_time}\n{text}\n\n")
+                    counter += 1
+            else:
+                if is_karaoke:
+                    start_time = format_ass_timestamp(segment.start)
+                    end_time = format_ass_timestamp(segment.end)
+                    text = segment.text.strip()
+                    f.write(f"Dialogue: 0,{start_time},{end_time},Default,,0,0,0,,{text}\n")
+                else:
+                    start_time = format_timestamp(segment.start)
+                    end_time = format_timestamp(segment.end)
+                    text = segment.text.strip()
+                    f.write(f"{counter}\n{start_time} --> {end_time}\n{text}\n\n")
+                counter += 1
 
     return True
+
+
+def format_ass_timestamp(seconds):
+    """
+    Convert seconds to ASS timestamp format (H:MM:SS.cs)
+    """
+    hours = int(seconds // 3600)
+    minutes = int((seconds % 3600) // 60)
+    secs = int(seconds % 60)
+    cs = int((seconds % 1) * 100)
+    return f"{hours}:{minutes:02d}:{secs:02d}.{cs:02d}"
 
 
 def format_timestamp(seconds):
@@ -478,7 +549,7 @@ def proses_satu_clip(video_id, item, index, total_duration, crop_mode="default",
 
     temp_file = f"temp_{index}.mkv"
     cropped_file = f"temp_cropped_{index}.mp4"
-    subtitle_file = f"temp_{index}.srt"
+    subtitle_file = f"temp_{index}.ass" if SUBTITLE_STYLE == "karaoke" else f"temp_{index}.srt"
     output_file = os.path.join(OUTPUT_DIR, f"clip_{index}.mp4")
 
     # ... (download logic omitted for brevity, assuming it remains same) ...
@@ -622,7 +693,7 @@ def proses_satu_clip(video_id, item, index, total_duration, crop_mode="default",
                 ]
         elif crop_mode == "split_right":
             if OUTPUT_RATIO == "original" or not out_w or not out_h or out_h < out_w:
-                vf = build_cover_scale_crop_vf(out_w or 1080, out_h or 1920) if OUTPUT_RATIO != "original" else None
+                vf = build_cover_scale_crop_vf(out_w or 720, out_h or 1280) if OUTPUT_RATIO != "original" else None
                 vf = apply_wm_simple(vf)
                 cmd_crop = [
                     "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
@@ -1118,9 +1189,10 @@ def proses_satu_clip(video_id, item, index, total_duration, crop_mode="default",
                     text=True
                 )
                 
-                # Save SRT to output directory for AI usage
-                final_srt_path = os.path.join(OUTPUT_DIR, f"clip_{index}.srt")
-                shutil.copy2(subtitle_file, final_srt_path)
+                # Save subtitle to output directory for AI usage
+                ext = ".ass" if SUBTITLE_STYLE == "karaoke" else ".srt"
+                final_sub_path = os.path.join(OUTPUT_DIR, f"clip_{index}{ext}")
+                shutil.copy2(subtitle_file, final_sub_path)
 
                 os.remove(cropped_file)
                 os.remove(subtitle_file)
