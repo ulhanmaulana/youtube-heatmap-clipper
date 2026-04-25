@@ -24,21 +24,21 @@ SUBTITLE_FONT = "Arial"
 SUBTITLE_FONTS_DIR = None
 SUBTITLE_LOCATION = "bottom"
 OUTPUT_RATIO = "9:16"
-OUT_WIDTH = 720
-OUT_HEIGHT = 1280
+OUT_WIDTH = 1080
+OUT_HEIGHT = 1920
 
 
 def set_ratio_preset(preset):
     global OUTPUT_RATIO, OUT_WIDTH, OUT_HEIGHT
     OUTPUT_RATIO = preset
     if preset == "9:16":
-        OUT_WIDTH, OUT_HEIGHT = 720, 1280
+        OUT_WIDTH, OUT_HEIGHT = 1080, 1920
         return
     if preset == "1:1":
-        OUT_WIDTH, OUT_HEIGHT = 720, 720
+        OUT_WIDTH, OUT_HEIGHT = 1080, 1080
         return
     if preset == "16:9":
-        OUT_WIDTH, OUT_HEIGHT = 1280, 720
+        OUT_WIDTH, OUT_HEIGHT = 1920, 1080
         return
     if preset == "original":
         OUT_WIDTH, OUT_HEIGHT = None, None
@@ -622,7 +622,7 @@ def proses_satu_clip(video_id, item, index, total_duration, crop_mode="default",
                 ]
         elif crop_mode == "split_right":
             if OUTPUT_RATIO == "original" or not out_w or not out_h or out_h < out_w:
-                vf = build_cover_scale_crop_vf(out_w or 720, out_h or 1280) if OUTPUT_RATIO != "original" else None
+                vf = build_cover_scale_crop_vf(out_w or 1080, out_h or 1920) if OUTPUT_RATIO != "original" else None
                 vf = apply_wm_simple(vf)
                 cmd_crop = [
                     "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
