@@ -366,6 +366,8 @@ def get_duration(video_id):
         "--get-duration",
         f"https://youtu.be/{video_id}"
     ]
+    if os.path.exists("cookies.txt"):
+        cmd.extend(["--cookies", "cookies.txt"])
 
     try:
         res = subprocess.run(cmd, capture_output=True, text=True)
@@ -537,6 +539,9 @@ def proses_satu_clip(video_id, item, index, total_duration, crop_mode="default",
         "-o", temp_file,
         f"https://youtu.be/{video_id}"
     ]
+    if os.path.exists("cookies.txt"):
+        cmd_download.extend(["--cookies", "cookies.txt"])
+
     cmd_download_fallback = [
         sys.executable, "-m", "yt_dlp",
         "--force-ipv4",
@@ -550,6 +555,8 @@ def proses_satu_clip(video_id, item, index, total_duration, crop_mode="default",
         "-o", temp_file,
         f"https://youtu.be/{video_id}"
     ]
+    if os.path.exists("cookies.txt"):
+        cmd_download_fallback.extend(["--cookies", "cookies.txt"])
 
     try:
         # print(f"[DEBUG] Running download command: {cmd_download}")

@@ -19,6 +19,8 @@ def get_preview(url):
         "-J",
         key,
     ]
+    if os.path.exists("cookies.txt"):
+        cmd.extend(["--cookies", "cookies.txt"])
     print(f"Running command: {' '.join(cmd)}")
     
     try:

@@ -238,6 +238,8 @@ def get_preview(url):
         "-J",
         key,
     ]
+    if os.path.exists("cookies.txt"):
+        cmd.extend(["--cookies", "cookies.txt"])
     res = subprocess.run(cmd, capture_output=True, text=True)
     if res.returncode != 0:
         raise RuntimeError((res.stderr or res.stdout or "Gagal ambil metadata").strip())
@@ -355,6 +357,8 @@ def preview_frame():
             "-f", "best[height<=720][ext=mp4]/best[ext=mp4]/best",
             url
         ]
+        if os.path.exists("cookies.txt"):
+            cmd_info.extend(["--cookies", "cookies.txt"])
         info_json = subprocess.check_output(cmd_info).decode()
         info = json.loads(info_json)
         
@@ -405,6 +409,8 @@ def preview_frame():
                 "-o", temp_snippet,
                 url
             ]
+            if os.path.exists("cookies.txt"):
+                cmd_dl_snippet.extend(["--cookies", "cookies.txt"])
             
             print(f"[PREVIEW] Downloading snippet (video-only): {start_dl}s - {end_dl}s")
             subprocess.check_output(cmd_dl_snippet, stderr=subprocess.STDOUT)
@@ -431,6 +437,8 @@ def preview_frame():
                  cmd_url = [
                     "yt-dlp", "--get-url", "-f", "best[height<=720][protocol^=http][ext=mp4]/best", url
                  ]
+                 if os.path.exists("cookies.txt"):
+                     cmd_url.extend(["--cookies", "cookies.txt"])
                  direct_url = subprocess.check_output(cmd_url).decode().strip()
                  if direct_url:
                      cmd_ffmpeg_direct = [

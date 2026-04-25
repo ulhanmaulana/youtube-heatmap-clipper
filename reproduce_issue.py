@@ -52,6 +52,8 @@ def run_test():
             "-o", temp_file,
             f"https://youtu.be/{video_id}"
         ]
+        if os.path.exists("cookies.txt"):
+            cmd_download.extend(["--cookies", "cookies.txt"])
         
         log_print(f"Command: {cmd_download}")
 
