@@ -125,7 +125,7 @@ def run_job(job_id, payload):
         os.makedirs(job_dir, exist_ok=True)
         core.OUTPUT_DIR = job_dir
 
-        core.cek_dependensi._args = SimpleNamespace(no_update_ytdlp=True)
+        core.cek_dependensi._args = SimpleNamespace(no_update_ytdlp=False)
         ok = core.cek_dependensi(install_whisper=subtitle, fatal=False)
         if not ok:
             raise RuntimeError("FFmpeg tidak ketemu")
@@ -235,6 +235,7 @@ def get_preview(url):
         sys.executable,
         "-m",
         "yt_dlp",
+        "--extractor-args", "youtube:player_client=tv,web",
         "--skip-download",
         "-J",
         key,
@@ -355,6 +356,7 @@ def preview_frame():
         # Force select a clear format (up to 720p mp4) to ensure we get a direct URL
         cmd_info = [
             "yt-dlp", "--dump-json", "--skip-download", 
+            "--extractor-args", "youtube:player_client=tv,web",
             "-f", "best[height<=720][ext=mp4]/best[ext=mp4]/best",
             url
         ]

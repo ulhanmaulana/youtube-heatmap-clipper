@@ -189,7 +189,7 @@ def cek_dependensi(install_whisper=False, fatal=True):
 
     if not skip_update:
         subprocess.run(
-            [sys.executable, "-m", "pip", "install", "-U", "yt-dlp"],
+            [sys.executable, "-m", "pip", "install", "-U", "--pre", "yt-dlp"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL
         )
@@ -364,6 +364,7 @@ def get_duration(video_id):
         sys.executable,
         "-m",
         "yt_dlp",
+        "--extractor-args", "youtube:player_client=tv,web",
         "--get-duration",
         f"https://youtu.be/{video_id}"
     ]
@@ -600,7 +601,7 @@ def proses_satu_clip(video_id, item, index, total_duration, crop_mode="default",
         sys.executable, "-m", "yt_dlp",
         "--force-ipv4",
         # "--verbose", # DEBUG: verbose
-        "--extractor-args", "youtube:player_client=android",
+        "--extractor-args", "youtube:player_client=tv,web",
         "--quiet", "--no-warnings",
         "--download-sections", f"*{start}-{end}",
         "--force-keyframes-at-cuts",
@@ -617,7 +618,7 @@ def proses_satu_clip(video_id, item, index, total_duration, crop_mode="default",
         sys.executable, "-m", "yt_dlp",
         "--force-ipv4",
         # "--verbose", # DEBUG: verbose
-        "--extractor-args", "youtube:player_client=android",
+        "--extractor-args", "youtube:player_client=tv,web",
         "--quiet", "--no-warnings",
         "--download-sections", f"*{start}-{end}",
         "--force-keyframes-at-cuts",
