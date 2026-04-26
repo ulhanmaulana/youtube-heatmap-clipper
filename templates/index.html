@@ -220,9 +220,20 @@
               data-i18n-placeholder="ph.subtitle_font_custom" />
           </div>
 
-          <div class="form-group">
-            <label class="label" data-i18n="label.subtitle_fontsdir">Font Directory</label>
-            <input id="subtitle_fontsdir" class="input" value="fonts" />
+          <div class="grid2">
+            <div class="form-group">
+              <label class="label">Effect</label>
+              <select id="subtitle_effect" class="input select">
+                <option value="standard" selected>Standard (Auto-wrap)</option>
+                <option value="karaoke">Karaoke (Highlight)</option>
+                <option value="dynamic">Dynamic (Muncul Bertahap)</option>
+                <option value="word_by_word">Satu per Satu (1 Kata)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="label" data-i18n="label.subtitle_fontsdir">Font Directory</label>
+              <input id="subtitle_fontsdir" class="input" value="fonts" />
+            </div>
           </div>
 
           <hr class="divider" />

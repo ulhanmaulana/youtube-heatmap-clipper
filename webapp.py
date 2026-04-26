@@ -111,12 +111,14 @@ def run_job(job_id, payload):
         max_clips = safe_int(payload.get("max_clips"), 10)
         mode = payload.get("mode") or "heatmap"
         custom_crop = payload.get("custom_crop")
+        subtitle_effect = payload.get("subtitle_effect") or "standard"
         set_job(job_id, subtitle_enabled=subtitle)
 
         core.WHISPER_MODEL = whisper_model
         core.SUBTITLE_FONT = subtitle_font
         core.SUBTITLE_FONTS_DIR = subtitle_fontsdir
         core.SUBTITLE_LOCATION = subtitle_location
+        core.SUBTITLE_EFFECT = subtitle_effect
         core.PADDING = max(0, padding if padding is not None else 10)
         core.set_ratio_preset(ratio)
 

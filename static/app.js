@@ -369,6 +369,7 @@ function readPayload() {
     start: $("start").value || "",
     end: $("end").value || "",
     custom_crop: currentCustomCrop,
+    subtitle_effect: $("subtitle_effect") ? $("subtitle_effect").value : "standard",
   };
 }
 

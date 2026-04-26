@@ -23,6 +23,7 @@ WHISPER_MODEL = "small"    # Whisper model size: tiny, base, small, medium, larg
 SUBTITLE_FONT = "Arial"
 SUBTITLE_FONTS_DIR = None
 SUBTITLE_LOCATION = "bottom"
+SUBTITLE_EFFECT = "standard"
 OUTPUT_RATIO = "9:16"
 OUT_WIDTH = 720
 OUT_HEIGHT = 1280
@@ -409,7 +410,7 @@ def generate_subtitle(video_file, subtitle_file, event_hook=None):
                 event_hook("stage", {"stage": "subtitle_transcribe"})
             except Exception:
                 pass
-        segments, info = model.transcribe(video_file, language="id")
+        segments, info = model.transcribe(video_file, language="id", word_timestamps=True)
         return segments
 
     try:
@@ -436,14 +437,84 @@ def generate_subtitle(video_file, subtitle_file, event_hook=None):
             pass
     print("  Generating subtitle file...")
     with open(subtitle_file, "w", encoding="utf-8") as f:
-        for i, segment in enumerate(segments, start=1):
-            start_time = format_timestamp(segment.start)
-            end_time = format_timestamp(segment.end)
-            text = segment.text.strip()
+        # Break segments into smaller chunks to prevent overlapping/stacking
+        chunks = []
+        for segment in segments:
+            if not getattr(segment, "words", None):
+                chunks.append({"start": segment.start, "end": segment.end, "words": [{"word": segment.text, "start": segment.start, "end": segment.end}]})
+                continue
+            
+            current_chunk = []
+            current_length = 0
+            for w in segment.words:
+                word_text = w.word.strip()
+                if current_length + len(word_text) > 30 and current_chunk:
+                    chunks.append({
+                        "start": current_chunk[0].start,
+                        "end": current_chunk[-1].end,
+                        "words": current_chunk
+                    })
+                    current_chunk = []
+                    current_length = 0
+                current_chunk.append(w)
+                current_length += len(word_text) + 1
+            
+            if current_chunk:
+                chunks.append({
+                    "start": current_chunk[0].start,
+                    "end": current_chunk[-1].end,
+                    "words": current_chunk
+                })
 
-            f.write(f"{i}\n")
-            f.write(f"{start_time} --> {end_time}\n")
-            f.write(f"{text}\n\n")
+        event_idx = 1
+        for chunk in chunks:
+            if SUBTITLE_EFFECT == "karaoke":
+                for w_idx, w in enumerate(chunk["words"]):
+                    start_ts = w.start if w_idx == 0 else w.start
+                    end_ts = chunk["words"][w_idx+1].start if w_idx + 1 < len(chunk["words"]) else chunk["end"]
+                    
+                    f.write(f"{event_idx}\n")
+                    f.write(f"{format_timestamp(start_ts)} --> {format_timestamp(end_ts)}\n")
+                    
+                    sentence = []
+                    for j, sub_w in enumerate(chunk["words"]):
+                        word_text = sub_w.word.strip()
+                        if j == w_idx:
+                            sentence.append(f'<font color="#ffff00">{word_text}</font>')
+                        else:
+                            sentence.append(word_text)
+                    
+                    f.write(" ".join(sentence) + "\n\n")
+                    event_idx += 1
+
+            elif SUBTITLE_EFFECT == "dynamic":
+                for w_idx, w in enumerate(chunk["words"]):
+                    start_ts = w.start if w_idx == 0 else w.start
+                    end_ts = chunk["words"][w_idx+1].start if w_idx + 1 < len(chunk["words"]) else chunk["end"]
+                    
+                    f.write(f"{event_idx}\n")
+                    f.write(f"{format_timestamp(start_ts)} --> {format_timestamp(end_ts)}\n")
+                    
+                    sentence = [sub_w.word.strip() for sub_w in chunk["words"][:w_idx+1]]
+                    f.write(" ".join(sentence) + "\n\n")
+                    event_idx += 1
+
+            elif SUBTITLE_EFFECT == "word_by_word":
+                for w_idx, w in enumerate(chunk["words"]):
+                    start_ts = w.start if w_idx == 0 else w.start
+                    end_ts = chunk["words"][w_idx+1].start if w_idx + 1 < len(chunk["words"]) else chunk["end"]
+                    
+                    f.write(f"{event_idx}\n")
+                    f.write(f"{format_timestamp(start_ts)} --> {format_timestamp(end_ts)}\n")
+                    f.write(f"{w.word.strip()}\n\n")
+                    event_idx += 1
+            else:
+                # Standard
+                f.write(f"{event_idx}\n")
+                f.write(f"{format_timestamp(chunk['start'])} --> {format_timestamp(chunk['end'])}\n")
+                text = " ".join([w.word.strip() for w in chunk["words"]])
+                f.write(f"{text}\n\n")
+                event_idx += 1
 
     return True
 
