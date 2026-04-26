@@ -240,8 +240,9 @@ def get_preview(url):
         "-J",
         key,
     ]
-    if os.path.exists("cookies.txt"):
-        cmd.extend(["--cookies", "cookies.txt"])
+    cookies = core.get_cookies_path()
+    if cookies:
+        cmd.extend(["--cookies", cookies])
     res = subprocess.run(cmd, capture_output=True, text=True)
     if res.returncode != 0:
         raise RuntimeError((res.stderr or res.stdout or "Gagal ambil metadata").strip())
@@ -360,8 +361,9 @@ def preview_frame():
             "-f", "best[height<=720][ext=mp4]/best[ext=mp4]/best",
             url
         ]
-        if os.path.exists("cookies.txt"):
-            cmd_info.extend(["--cookies", "cookies.txt"])
+        cookies = core.get_cookies_path()
+        if cookies:
+            cmd_info.extend(["--cookies", cookies])
         info_json = subprocess.check_output(cmd_info).decode()
         info = json.loads(info_json)
         

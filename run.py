@@ -25,6 +25,12 @@ SUBTITLE_FONTS_DIR = None
 SUBTITLE_LOCATION = "bottom"
 SUBTITLE_STYLE = "normal"
 OUTPUT_RATIO = "9:16"
+
+def get_cookies_path():
+    for p in ["cookies.txt", "../cookies.txt", "/content/cookies.txt"]:
+        if os.path.exists(p):
+            return p
+    return None
 OUT_WIDTH = 720
 OUT_HEIGHT = 1280
 
@@ -368,8 +374,9 @@ def get_duration(video_id):
         "--get-duration",
         f"https://youtu.be/{video_id}"
     ]
-    if os.path.exists("cookies.txt"):
-        cmd.extend(["--cookies", "cookies.txt"])
+    cookies = get_cookies_path()
+    if cookies:
+        cmd.extend(["--cookies", cookies])
 
     try:
         res = subprocess.run(cmd, capture_output=True, text=True)
@@ -611,8 +618,9 @@ def proses_satu_clip(video_id, item, index, total_duration, crop_mode="default",
         "-o", temp_file,
         f"https://youtu.be/{video_id}"
     ]
-    if os.path.exists("cookies.txt"):
-        cmd_download.extend(["--cookies", "cookies.txt"])
+    cookies = get_cookies_path()
+    if cookies:
+        cmd_download.extend(["--cookies", cookies])
 
     cmd_download_fallback = [
         sys.executable, "-m", "yt_dlp",
@@ -627,8 +635,8 @@ def proses_satu_clip(video_id, item, index, total_duration, crop_mode="default",
         "-o", temp_file,
         f"https://youtu.be/{video_id}"
     ]
-    if os.path.exists("cookies.txt"):
-        cmd_download_fallback.extend(["--cookies", "cookies.txt"])
+    if cookies:
+        cmd_download_fallback.extend(["--cookies", cookies])
 
     try:
         # print(f"[DEBUG] Running download command: {cmd_download}")
