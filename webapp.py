@@ -82,7 +82,7 @@ def list_outputs(job_dir):
         if os.path.isfile(path):
             if name.lower().endswith(".mp4"):
                items.append({"name": name, "size": os.path.getsize(path), "type": "video"})
-            elif name.lower().endswith(".srt") or name.lower().endswith(".ass"):
+            elif name.lower().endswith(".srt"):
                items.append({"name": name, "size": os.path.getsize(path), "type": "subtitle"})
     
     items.sort(key=lambda x: x["name"])
@@ -117,7 +117,6 @@ def run_job(job_id, payload):
         core.SUBTITLE_FONT = subtitle_font
         core.SUBTITLE_FONTS_DIR = subtitle_fontsdir
         core.SUBTITLE_LOCATION = subtitle_location
-        core.SUBTITLE_STYLE = payload.get("subtitle_style") or "normal"
         core.PADDING = max(0, padding if padding is not None else 10)
         core.set_ratio_preset(ratio)
 
@@ -125,7 +124,7 @@ def run_job(job_id, payload):
         os.makedirs(job_dir, exist_ok=True)
         core.OUTPUT_DIR = job_dir
 
-        core.cek_dependensi._args = SimpleNamespace(no_update_ytdlp=False)
+        core.cek_dependensi._args = SimpleNamespace(no_update_ytdlp=True)
         ok = core.cek_dependensi(install_whisper=subtitle, fatal=False)
         if not ok:
             raise RuntimeError("FFmpeg tidak ketemu")
@@ -239,9 +238,8 @@ def get_preview(url):
         "-J",
         key,
     ]
-    cookies = core.get_cookies_path()
-    if cookies:
-        cmd.extend(["--cookies", cookies])
+    if os.path.exists("cookies.txt"):
+        cmd.extend(["--cookies", "cookies.txt"])
     res = subprocess.run(cmd, capture_output=True, text=True)
     if res.returncode != 0:
         raise RuntimeError((res.stderr or res.stdout or "Gagal ambil metadata").strip())
@@ -356,12 +354,11 @@ def preview_frame():
         # Force select a clear format (up to 720p mp4) to ensure we get a direct URL
         cmd_info = [
             "yt-dlp", "--dump-json", "--skip-download", 
-            "-f", "bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best",
+            "-f", "best[height<=720][ext=mp4]/best[ext=mp4]/best",
             url
         ]
-        cookies = core.get_cookies_path()
-        if cookies:
-            cmd_info.extend(["--cookies", cookies])
+        if os.path.exists("cookies.txt"):
+            cmd_info.extend(["--cookies", "cookies.txt"])
         info_json = subprocess.check_output(cmd_info).decode()
         info = json.loads(info_json)
         

@@ -362,7 +362,6 @@ function readPayload() {
     subtitle: $("subtitle").value === "y",
     whisper_model: $("whisper_model").value,
     subtitle_font: subtitleFont,
-    subtitle_style: $("subtitle_style") ? $("subtitle_style").value : "normal",
     subtitle_location: $("subtitle_location").value,
     subtitle_fontsdir: $("subtitle_fontsdir").value || "",
     watermark_text: $("watermark_text").value || "",
