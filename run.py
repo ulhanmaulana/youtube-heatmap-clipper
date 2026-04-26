@@ -611,8 +611,7 @@ def proses_satu_clip(video_id, item, index, total_duration, crop_mode="default",
         "--download-sections", f"*{start}-{end}",
         "--force-keyframes-at-cuts",
         "--merge-output-format", "mkv",
-        "-f",
-        "bv*[height<=1080][ext=mp4]+ba[ext=m4a]/bv*[height<=1080]+ba/b[height<=1080]/bv*+ba/b",
+        "-f", "bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best",
         "-o", temp_file,
         f"https://youtu.be/{video_id}"
     ]
@@ -628,7 +627,6 @@ def proses_satu_clip(video_id, item, index, total_duration, crop_mode="default",
         "--download-sections", f"*{start}-{end}",
         "--force-keyframes-at-cuts",
         "--merge-output-format", "mkv",
-        "-f", "bv*+ba/b",
         "-o", temp_file,
         f"https://youtu.be/{video_id}"
     ]

@@ -356,7 +356,7 @@ def preview_frame():
         # Force select a clear format (up to 720p mp4) to ensure we get a direct URL
         cmd_info = [
             "yt-dlp", "--dump-json", "--skip-download", 
-            "-f", "best[height<=720][ext=mp4]/best[ext=mp4]/best",
+            "-f", "bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best",
             url
         ]
         cookies = core.get_cookies_path()
